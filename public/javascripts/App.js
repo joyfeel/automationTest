@@ -10,7 +10,7 @@ class App extends React.Component {
 	send () {
 		console.log('Send start');
 		request
-			.get('/execAutoTest')
+			.get('/execRouter')
 			.end(function(err, res) {
 				if (err) {
 					console.log('Send fall');

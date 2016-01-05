@@ -7,7 +7,7 @@ var app = require('koa')()
 
 var index = require('./routes/index');
 var users = require('./routes/users');
-var execAutoTest = require('./routes/execAutoTest');
+var execAutoTest = require('./routes/execRouter');
 
 // global middlewares
 app.use(views('views', {
@@ -30,7 +30,7 @@ app.use(require('koa-static')(__dirname + '/public'));
 // routes definition
 koa.use('/', index.routes(), index.allowedMethods());
 koa.use('/users', users.routes(), users.allowedMethods());
-koa.use('/execAutoTest', execAutoTest.routes(), execAutoTest.allowedMethods());
+koa.use('/execRouter', execAutoTest.routes(), execAutoTest.allowedMethods());
 
 // mount root routes  
 app.use(koa.routes());

@@ -63,57 +63,90 @@ const postH2testw = async () => {
 	console.log(batLog);		
 };
 
+const preFLCC = async () => {
+	let batLog; 
+
+	console.log('======preFLCC======');
+	batLog = await myExec(__dirname + '/batScripts/preFLCC.bat');
+	console.log(batLog);		
+};
+
+const FLCC = async () => {
+	let batLog; 
+
+	console.log('======FLCC======');
+	batLog = await myExec(__dirname + '/batScripts/FLCC.bat');
+	console.log(batLog);		
+};
+
+const ATTO = async () => {
+	let batLog; 
+
+	console.log('======ATTO======');
+	batLog = await myExec(__dirname + '/batScripts/ATTO.bat');
+	console.log(batLog);		
+};
+
 const testAsync = async () => {
 	try {
-		let batLog;
 		await MPTOOL();
+/*
 		await FORMAT();
 		await MFCJunior();
-		await postMFCJunior();		
+		await postMFCJunior();
+
+		await FORMAT();	
 		await H2testw();
 		await postH2testw();
 
+		await FORMAT();
+		await preFLCC();
+		await FLCC();
+*/
+		await FORMAT();
+		await ATTO();
 	} catch (err) {
 		console.log('ERROR happend: ' + err);
 	}
 };
 
-/*		
-		//(1) Mptool
-		batLog = await myExec(__dirname + '/batScripts/Mptool.bat');
-		console.log('======Mptool======');
-		console.log(batLog);
+const time = async () => {
+	return new Promise((resolve, reject) => {
+		setTimeout(() => {
+			resolve(118)
+		}, 1000);
+	});
+};
 
-		//(2) Format E:/
-		batLog = await myExec(__dirname + '/batScripts/Format.bat');
-		console.log('======Format======');
-		console.log(batLog);
-		
-		//(3) MFCJunior
-		batLog = await myExec(__dirname + '/batScripts/MFCJunior.bat');
-		console.log('======MFCJunior======');
-		console.log(batLog);
-		//(3.1) Post MFCJunior
-		batLog = await myExec(__dirname + '/batScripts/postMFCJunior.bat');;
-		console.log('======post MFCJunior======');
-		console.log(batLog);
+process.on('message', async (msg) => {
+	console.log ('Send test AA');
+	console.log ('Send test BB');
+	try {
+		await testAsync();
+		//let a = await time();	
+		//console.log(a);
+	} catch(err) {
+		console.log(err);
+	}
+	
+	
+	process.exit(0);
+	console.log ('Send test ZZ');
+});
 
-		//(4) H2testw
-		batLog = await myExec(__dirname + '/batScripts/H2testw.bat');
-		console.log('======H2testw======');
-		console.log(batLog);
-		//(4.1) Post H2testw
-		batLog = await myExec(__dirname + '/batScripts/postH2testw.bat');;
-		console.log('======post H2testw======');
-		console.log(batLog);
-*/
 
+
+
+//process.exit(0);
+
+/*
 router.get('/', function *(next) {
   //this.body = 'this a users response!';
-  console.log ('Send test A');
-  yield testAsync();
-  console.log ('Send test B');
+  console.log ('Send test AA');
+  //yield testAsync();
+  console.log ('Send test BB');
   this.status = 200;
 });
 
 module.exports = router;
+*/
