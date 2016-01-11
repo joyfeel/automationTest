@@ -154,7 +154,7 @@ const testAsync = async () => {
 		await preScript();
 
 		//MPTOOL
-		await MPTOOL();
+		//await MPTOOL();
 
 		//MFCJunior
 		result = await FORMAT();

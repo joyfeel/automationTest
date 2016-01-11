@@ -5,7 +5,7 @@
   "scripts": {
     "start": "babel-node ./bin/www",
     "test": "nodemon ./bin/www --exec babel-node",
-    "build": "jspm bundle-sfx public/javascripts/main.js public/dest/build.js --minify"
+    "build": "jspm bundle-sfx public/javascripts/main.js public/dest/build.js"
   },
   "dependencies": {
     "co": "^4.6.0",
@@ -15,6 +15,7 @@
     "koa-bodyparser": "^2.0.1",
     "koa-json": "^1.1.1",
     "koa-logger": "^1.3.0",
+    "koa-multer": "0.0.2",
     "koa-onerror": "^1.2.1",
     "koa-router": "^5.3.0",
     "koa-static": "^1.5.2",
