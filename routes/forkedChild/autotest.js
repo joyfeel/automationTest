@@ -1,7 +1,11 @@
 //var router = require('koa-router')();
 import Router from 'koa-router';
 const router = Router();
-import {exec} from 'child_process';
+import { exec } from 'child_process';
+import zip from './util/compression';
+import * as mail from './util/mail';
+//const mail = Mail('XD');
+//var mail=require('./mail/mail')('XD');
 
 const parseBatchLog = (str) => {
 	let result = false,
@@ -19,6 +23,7 @@ const parseBatchLog = (str) => {
 };
 
 const myExec = (script) => {
+	console.log(new Date());
 	return new Promise((resolve, reject) => {
 		exec(script, (err, stdout, stderr) => {
 			if (err !== null) {
@@ -37,30 +42,6 @@ const preScript = async () => {
 		await myExec(__dirname + '/batScripts/preScript.bat');
 		resolve('pre ok');
 	});	
-};
-
-const MPTOOL = async () => {
-	let batLog;
-
-	console.log('======Mptool======');
-	batLog = await myExec(__dirname + '/batScripts/Mptool.bat');
-	console.log(batLog);	
-};
-
-const FORMAT = async () => {
-	return new Promise(async (resolve, reject) => {
-		let batLog,
-		result = false;		
-		
-		console.log('======Format======');
-		batLog = await myExec(__dirname + '/batScripts/Format.bat');
-		result = parseBatchLog (batLog);
-		if (result === false) {
-			reject('Format error');
-		} else {
-			resolve('Format ok');
-		}
-	});
 };
 
 const MFCJunior = async () => {
@@ -147,35 +128,62 @@ const ATTO = async () => {
 	});	
 };
 
-const testAsync = async () => {
+const FORMAT = async (formatType) => {
+	return new Promise(async (resolve, reject) => {
+		let batLog,
+		result = false;
+
+		console.log('======Format======');
+		batLog = await myExec(__dirname + '/batScripts/Format.bat ' + formatType);
+		result = parseBatchLog (batLog);
+		if (result === false) {
+			reject('Format error');
+		} else {
+			resolve('Format ok');
+		}
+	});
+};
+
+const MPTOOL = async (filename) => {
+	let batLog;
+
+	console.log('======Mptool======');
+	batLog = await myExec(__dirname + '/batScripts/Mptool.bat ' + filename);
+	console.log(batLog);	
+};
+
+const testAsync = async (msg) => {
 	let result;
+
+	const {filename, formatType} = msg;
+
 	try {
+		result = await MPTOOL(filename);
+		console.log(result);
+
 		//pre clear
 		await preScript();
 
-		//MPTOOL
-		//await MPTOOL();
-
 		//MFCJunior
-		result = await FORMAT();
+		result = await FORMAT(formatType);
 		console.log(result);
 		result = await MFCJunior();
 		console.log(result);
 
 		//H2testw
-		result = await FORMAT();
+		result = await FORMAT(formatType);
 		console.log(result);
 		result = await H2testw();
 		console.log(result);		
 
 		//FLCC
-		result = await FORMAT();
+		result = await FORMAT(formatType);
 		console.log(result);
 		result = await FLCC();
 		console.log(result);
 
 		//ATTO
-		result = await FORMAT();
+		result = await FORMAT(formatType);
 		console.log(result);
 		result = await ATTO();
 		console.log(result);
@@ -194,34 +202,18 @@ const time = async () => {
 };
 
 process.on('message', async (msg) => {
-	console.log ('Send test AA');
-	console.log ('Send test BB');
 	try {
-		await testAsync();
-		//let a = await time();	
-		//console.log(a);
+		await testAsync(msg);
+		await zip();
+		await mail.init({
+			//toMail: 'joybee210@gmail.com'
+			toMail: msg.email
+		});
+		await mail.send();
+		//mail.send();
 	} catch(err) {
 		console.log(err);
 	}
 	
-	
 	process.exit(0);
-	console.log ('Send test ZZ');
 });
-
-
-
-
-//process.exit(0);
-
-/*
-router.get('/', function *(next) {
-  //this.body = 'this a users response!';
-  console.log ('Send test AA');
-  //yield testAsync();
-  console.log ('Send test BB');
-  this.status = 200;
-});
-
-module.exports = router;
-*/
