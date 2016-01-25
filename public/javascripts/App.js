@@ -13,7 +13,10 @@ class App extends React.Component {
 		this.state = {
 			file: '',
 			formatType: 'fat32',
-			email: ''
+			email: '',
+			resend: false,
+			style: null,
+			disabled: true
 		};
 		this.submit = this.submit.bind(this);
 		this.handleChangeFile = this.handleChangeFile.bind(this);
@@ -24,6 +27,11 @@ class App extends React.Component {
 		const {file, formatType, email} = this.state;
 
 		if (!file || !email) {
+			return;
+		}
+
+		let retVal = confirm("Do you want to continue ?");
+		if (retVal === false) {
 			return;
 		}
 
@@ -78,25 +86,50 @@ class App extends React.Component {
 			formatType: this.refs.formatType.getValue()
 		});
 	}
+	validationEmail() {
+		let email = this.refs.email.getValue(),
+			re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+    		style;
+    	if (re.test(email)) {
+    		style = 'success';
+    	} else {
+    		style = 'danger';
+    	}
+
+    	let disabled = style !== 'success';
+
+		return { email, style, disabled };
+	}
 	handleChangeEmail() {
+		this.setState(this.validationEmail);
+	}
+	resend() {
 		this.setState({
-			email: this.refs.email.getValue()
-		});
-	}	
+			resend: !this.state.resend
+		});		
+	}
 	render() {
 		return (
 			<div>
 				<form>
-					<Input type='email' label='Email Address (VIA only)' placeholder='Enter email' ref='email' onChange={this.handleChangeEmail} />
+					<Input type='email' label='Email Address (VIA only)' 
+						placeholder='Enter email' 
+						ref='email' 
+						onChange={this.handleChangeEmail} />
 					<Input type='file' label='Choose Firmware File' ref='file' onChange={this.handleChangeFile} />
 				    <Input type='select' label="Select Format Type(Filesystem)" 
 				    	defaultValue='fat32' ref='formatType' 
 				    	onChange={this.handleChangeSelect} placeholder="select">
-				    	<option value="ntfs">NTFS (4k)</option>
+				    	{/*<option value="ntfs">NTFS (4k)</option>*/}
 				      	<option value="fat32" >FAT32 (16k)</option>
 				      	<option value="exfat">exFAT (32k)</option>
-				    </Input>					
-					<ButtonInput value='Send file (Async)' bsStyle="primary" onClick={this.submit} />
+				    </Input>
+				    {!this.state.resend
+				    	? <ButtonInput value='Send file (Async)' 
+				    		bsStyle={this.state.style} 
+							disabled={this.state.disabled} 
+							onClick={this.submit} />
+				    	: null} 
 				</form>
 			</div>
 		);

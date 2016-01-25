@@ -4,8 +4,6 @@ const router = Router();
 import { exec } from 'child_process';
 import zip from './util/compression';
 import * as mail from './util/mail';
-//const mail = Mail('XD');
-//var mail=require('./mail/mail')('XD');
 
 const parseBatchLog = (str) => {
 	let result = false,
@@ -37,7 +35,6 @@ const myExec = (script) => {
 
 const preScript = async () => {
 	return new Promise (async (resolve, reject) => {
-		//pre
 		console.log('======pre======');
 		await myExec(__dirname + '/batScripts/preScript.bat');
 		resolve('pre ok');
@@ -48,10 +45,6 @@ const MFCJunior = async () => {
 	return new Promise(async (resolve, reject) => {
 		let batLog,
 			result = false;		
-
-		//preMFCJunior
-		//console.log('======preMFCJunior======');
-		//await myExec(__dirname + '/batScripts/preMFCJunior.bat');
 
 		//MFCJunior
 		console.log('======MFCJunior======');
@@ -93,10 +86,6 @@ const FLCC = async () => {
 		let batLog,
 			result = false;
 
-		//preFLCC
-		//console.log('======preFLCC======');
-		//await myExec(__dirname + '/batScripts/preFLCC.bat');
-
 		//FLCC
 		console.log('======FLCC======');
 		batLog = await myExec(__dirname + '/batScripts/FLCC.bat');
@@ -124,6 +113,42 @@ const ATTO = async () => {
 			reject('ATTO error');
 		} else {
 			resolve('ATTO ok');
+		}
+	});	
+};
+
+const BurnIn = async () => {
+	return new Promise (async (resolve, reject) => {
+		let batLog,
+			result = false;
+
+		//BurnIn
+		console.log('======BurnInTest======');
+		batLog = await myExec(__dirname + '/batScripts/BurnIn.bat');
+		result = parseBatchLog (batLog);		
+
+		if (result === false) {
+			reject('BurnIn error');
+		} else {
+			resolve('BurnIn ok');
+		}
+	});	
+};
+
+const CDM = async () => {
+	return new Promise (async (resolve, reject) => {
+		let batLog,
+			result = false;
+
+		//CDM
+		console.log('======CDM======');
+		batLog = await myExec(__dirname + '/batScripts/CDM.bat');
+		result = parseBatchLog (batLog);		
+
+		if (result === false) {
+			reject('CDM error');
+		} else {
+			resolve('CDM ok');
 		}
 	});	
 };
@@ -158,11 +183,15 @@ const testAsync = async (msg) => {
 	const {filename, formatType} = msg;
 
 	try {
-		result = await MPTOOL(filename);
-		console.log(result);
+		//result = await FORMAT(formatType);
+		//console.log(result);	
+		//console.log('result');	
 
 		//pre clear
 		await preScript();
+
+		result = await MPTOOL(filename);
+		console.log(result);
 
 		//MFCJunior
 		result = await FORMAT(formatType);
@@ -188,6 +217,18 @@ const testAsync = async (msg) => {
 		result = await ATTO();
 		console.log(result);
 
+		//BurnIn test
+		result = await FORMAT(formatType);
+		console.log(result);
+		result = await BurnIn();
+		console.log(result);		
+
+		//CDM test
+		result = await FORMAT(formatType);
+		console.log(result);
+		result = await CDM();
+		console.log(result);	
+
 	} catch (err) {
 		console.log('ERROR happend: ' + err);
 	}
@@ -204,16 +245,15 @@ const time = async () => {
 process.on('message', async (msg) => {
 	try {
 		await testAsync(msg);
-		await zip();
-		await mail.init({
-			//toMail: 'joybee210@gmail.com'
-			toMail: msg.email
-		});
-		await mail.send();
-		//mail.send();
 	} catch(err) {
 		console.log(err);
 	}
-	
+
+	await zip();	
+	await mail.init({
+		toMail: msg.email
+	});
+	await mail.send();
+
 	process.exit(0);
 });

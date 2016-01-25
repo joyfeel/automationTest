@@ -8,6 +8,8 @@
     "build": "jspm bundle-sfx public/javascripts/main.js public/dest/build.js"
   },
   "dependencies": {
+    "amqp": "^0.2.4",
+    "amqplib": "^0.4.0",
     "archiver": "^0.21.0",
     "co": "^4.6.0",
     "debug": "^2.2.0",

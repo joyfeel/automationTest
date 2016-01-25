@@ -25748,7 +25748,10 @@ $__System.register('1b2', ['13', '16', '18', '27', '28', '31', 'a', 'd', '1b1'],
 					this.state = {
 						file: '',
 						formatType: 'fat32',
-						email: ''
+						email: '',
+						resend: false,
+						style: null,
+						disabled: true
 					};
 					this.submit = this.submit.bind(this);
 					this.handleChangeFile = this.handleChangeFile.bind(this);
@@ -25777,6 +25780,11 @@ $__System.register('1b2', ['13', '16', '18', '27', '28', '31', 'a', 'd', '1b1'],
 						var email = _state.email;
 
 						if (!file || !email) {
+							return;
+						}
+
+						var retVal = confirm("Do you want to continue ?");
+						if (retVal === false) {
 							return;
 						}
 
@@ -25828,10 +25836,31 @@ $__System.register('1b2', ['13', '16', '18', '27', '28', '31', 'a', 'd', '1b1'],
 						});
 					}
 				}, {
+					key: 'validationEmail',
+					value: function validationEmail() {
+						var email = this.refs.email.getValue(),
+						    re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+						    style = undefined;
+						if (re.test(email)) {
+							style = 'success';
+						} else {
+							style = 'danger';
+						}
+
+						var disabled = style !== 'success';
+
+						return { email: email, style: style, disabled: disabled };
+					}
+				}, {
 					key: 'handleChangeEmail',
 					value: function handleChangeEmail() {
+						this.setState(this.validationEmail);
+					}
+				}, {
+					key: 'resend',
+					value: function resend() {
 						this.setState({
-							email: this.refs.email.getValue()
+							resend: !this.state.resend
 						});
 					}
 				}, {
@@ -25843,18 +25872,16 @@ $__System.register('1b2', ['13', '16', '18', '27', '28', '31', 'a', 'd', '1b1'],
 							React.createElement(
 								'form',
 								null,
-								React.createElement(Input, { type: 'email', label: 'Email Address (VIA only)', placeholder: 'Enter email', ref: 'email', onChange: this.handleChangeEmail }),
+								React.createElement(Input, { type: 'email', label: 'Email Address (VIA only)',
+									placeholder: 'Enter email',
+									ref: 'email',
+									onChange: this.handleChangeEmail }),
 								React.createElement(Input, { type: 'file', label: 'Choose Firmware File', ref: 'file', onChange: this.handleChangeFile }),
 								React.createElement(
 									Input,
 									{ type: 'select', label: 'Select Format Type(Filesystem)',
 										defaultValue: 'fat32', ref: 'formatType',
 										onChange: this.handleChangeSelect, placeholder: 'select' },
-									React.createElement(
-										'option',
-										{ value: 'ntfs' },
-										'NTFS (4k)'
-									),
 									React.createElement(
 										'option',
 										{ value: 'fat32' },
@@ -25866,7 +25893,10 @@ $__System.register('1b2', ['13', '16', '18', '27', '28', '31', 'a', 'd', '1b1'],
 										'exFAT (32k)'
 									)
 								),
-								React.createElement(ButtonInput, { value: 'Send file (Async)', bsStyle: 'primary', onClick: this.submit })
+								!this.state.resend ? React.createElement(ButtonInput, { value: 'Send file (Async)',
+									bsStyle: this.state.style,
+									disabled: this.state.disabled,
+									onClick: this.submit }) : null
 							)
 						);
 					}
@@ -25879,6 +25909,7 @@ $__System.register('1b2', ['13', '16', '18', '27', '28', '31', 'a', 'd', '1b1'],
 		}
 	};
 });
+/*<option value="ntfs">NTFS (4k)</option>*/
 $__System.register("1b3", [], function() { return { setters: [], execute: function() {} } });
 
 $__System.register('1', ['18', '31', '1b2', '1b3'], function (_export) {
