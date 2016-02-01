@@ -30,7 +30,7 @@ class App extends React.Component {
 			return;
 		}
 
-		let retVal = confirm("Do you want to continue ?");
+		let retVal = confirm("Do you want to test?");
 		if (retVal === false) {
 			return;
 		}
@@ -125,7 +125,7 @@ class App extends React.Component {
 				      	<option value="exfat">exFAT (32k)</option>
 				    </Input>
 				    {!this.state.resend
-				    	? <ButtonInput value='Send file (Async)' 
+				    	? <ButtonInput value='Test firmware bin' 
 				    		bsStyle={this.state.style} 
 							disabled={this.state.disabled} 
 							onClick={this.submit} />
@@ -135,17 +135,5 @@ class App extends React.Component {
 		);
 	}
 }
-
-/*
-
-	uploadFiles(files) {
-		let formData = new FormData();
-
-		for (let i = 0; i < files.length; i++) {
-			formData.append('file', files[i]);
-		}
-	}
-
-*/
 
 export default App;

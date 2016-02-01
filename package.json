@@ -5,7 +5,8 @@
   "scripts": {
     "start": "babel-node ./bin/www",
     "dev": "nodemon ./bin/www --exec babel-node",
-    "build": "jspm bundle-sfx public/javascripts/main.js public/dest/build.js"
+    "build": "jspm bundle-sfx public/javascripts/main.js public/dest/build.js",
+    "product": "jspm bundle-sfx public/javascripts/main.js public/dest/build.js --minify --skip-source-maps"
   },
   "dependencies": {
     "amqp": "^0.2.4",

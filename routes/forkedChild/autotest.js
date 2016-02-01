@@ -135,14 +135,14 @@ const BurnIn = async () => {
 	});	
 };
 
-const CDM = async () => {
+const CDM = async (log_type) => {
 	return new Promise (async (resolve, reject) => {
 		let batLog,
 			result = false;
 
 		//CDM
 		console.log('======CDM======');
-		batLog = await myExec(__dirname + '/batScripts/CDM.bat');
+		batLog = await myExec(__dirname + '/batScripts/CDM.bat ' + log_type);
 		result = parseBatchLog (batLog);		
 
 		if (result === false) {
@@ -166,8 +166,25 @@ const FORMAT = async (formatType) => {
 		} else {
 			resolve('Format ok');
 		}
-	});
-};
+	})
+}
+
+const PowerCycle = async (formatType) => {
+	return new Promise(async (resolve, reject) => {
+		let batLog,
+		result = false;
+
+		console.log('======PowerCycle======');
+		batLog = await myExec(__dirname + '/batScripts/PowerCycle.bat ' + formatType);
+		result = parseBatchLog (batLog);
+		if (result === false) {
+			reject('PowerCycle error');
+		} else {
+			resolve('PowerCycle ok');
+		}
+	})
+}
+
 
 const MPTOOL = async (filename) => {
 	let batLog;
@@ -175,85 +192,90 @@ const MPTOOL = async (filename) => {
 	console.log('======Mptool======');
 	batLog = await myExec(__dirname + '/batScripts/Mptool.bat ' + filename);
 	console.log(batLog);	
-};
+}
 
 const testAsync = async (msg) => {
-	let result;
+	return new Promise(async (resolve, reject) => {
+		let result;
 
-	const {filename, formatType} = msg;
+		const {filename, formatType} = msg;
 
-	try {
-		//result = await FORMAT(formatType);
-		//console.log(result);	
-		//console.log('result');	
+		try {
+			//pre clear
+			await preScript();
 
-		//pre clear
-		await preScript();
+			result = await MPTOOL(filename);
+			console.log(result);
 
-		result = await MPTOOL(filename);
-		console.log(result);
+			//CDM test (clean)
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await CDM('clean');
+			console.log(result);
 
-		//MFCJunior
-		result = await FORMAT(formatType);
-		console.log(result);
-		result = await MFCJunior();
-		console.log(result);
+			//H2testw
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await H2testw();
+			console.log(result);	
 
-		//H2testw
-		result = await FORMAT(formatType);
-		console.log(result);
-		result = await H2testw();
-		console.log(result);		
+			//CDM test (dirty)
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await CDM('dirty');
+			console.log(result);
 
-		//FLCC
-		result = await FORMAT(formatType);
-		console.log(result);
-		result = await FLCC();
-		console.log(result);
+			//ATTO
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await ATTO();
+			console.log(result);	
+			
+			//FLCC
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await FLCC();
+			console.log(result);
 
-		//ATTO
-		result = await FORMAT(formatType);
-		console.log(result);
-		result = await ATTO();
-		console.log(result);
+			//MFCJunior
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await MFCJunior();
+			console.log(result);	
+			
+			//BurnIn test
+			result = await FORMAT(formatType);
+			console.log(result);
+			result = await BurnIn();
+			console.log(result);
 
-		//BurnIn test
-		result = await FORMAT(formatType);
-		console.log(result);
-		result = await BurnIn();
-		console.log(result);		
-
-		//CDM test
-		result = await FORMAT(formatType);
-		console.log(result);
-		result = await CDM();
-		console.log(result);	
-
-	} catch (err) {
-		console.log('ERROR happend: ' + err);
-	}
-};
-
-const time = async () => {
-	return new Promise((resolve, reject) => {
-		setTimeout(() => {
-			resolve(118)
-		}, 1000);
-	});
-};
+			resolve('success!');
+		} catch (err) {
+			//Power Cycle
+			console.log('ERROR happend: ' + err);
+			result = await PowerCycle();
+			console.log(result);			
+			reject('fail!');
+		}
+	})
+}
 
 process.on('message', async (msg) => {
+	let result;
+	
 	try {
-		await testAsync(msg);
+		result = await testAsync(msg);
 	} catch(err) {
+		result = err;
 		console.log(err);
 	}
-
+	console.log('@@@@@' + result + '@@@@@@')
 	await zip();	
 	await mail.init({
-		toMail: msg.email
+		toMail: msg.email,
+		result
 	});
 	await mail.send();
 
 	process.exit(0);
-});
+})
