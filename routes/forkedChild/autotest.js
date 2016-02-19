@@ -153,6 +153,22 @@ const CDM = async (log_type) => {
 	});	
 };
 
+const Trim = async () => {
+	return new Promise(async (resolve, reject) => {
+		let batLog,
+		result = false;
+
+		console.log('======Trim======');
+		batLog = await myExec(__dirname + '/batScripts/Trim.bat');
+		result = parseBatchLog (batLog);
+		if (result === false) {
+			reject('Trim error');
+		} else {
+			resolve('Trim ok');
+		}
+	})
+}
+
 const FORMAT = async (formatType) => {
 	return new Promise(async (resolve, reject) => {
 		let batLog,
@@ -169,13 +185,13 @@ const FORMAT = async (formatType) => {
 	})
 }
 
-const PowerCycle = async (formatType) => {
+const PowerCycle = async () => {
 	return new Promise(async (resolve, reject) => {
 		let batLog,
 		result = false;
 
 		console.log('======PowerCycle======');
-		batLog = await myExec(__dirname + '/batScripts/PowerCycle.bat ' + formatType);
+		batLog = await myExec(__dirname + '/batScripts/PowerCycle.bat');
 		result = parseBatchLog (batLog);
 		if (result === false) {
 			reject('PowerCycle error');
@@ -185,67 +201,90 @@ const PowerCycle = async (formatType) => {
 	})
 }
 
+const MPTOOL = async (firmwareFile, extcsdFile) => {
+	return new Promise(async (resolve, reject) => {
+		let batLog,
+		result = false;
 
-const MPTOOL = async (filename) => {
+		console.log('======Mptool======');
+		batLog = await myExec(__dirname + `/batScripts/Mptool.bat ${firmwareFile} ${extcsdFile}`);
+		result = parseBatchLog (batLog);
+		if (result === false) {
+			reject('Mptool error');
+		} else {
+			resolve('Mptool ok');
+		}
+	})
+
+}
+
+/*
+const MPTOOL = async (firmwareFile, extcsdFile) => {
 	let batLog;
 
 	console.log('======Mptool======');
-	batLog = await myExec(__dirname + '/batScripts/Mptool.bat ' + filename);
+	//batLog = await myExec(__dirname + '/batScripts/Mptool.bat ' +  + ' ' extcsdFile);
+	batLog = await myExec(__dirname + `/batScripts/Mptool.bat ${firmwareFile} ${extcsdFile}`);
 	console.log(batLog);	
 }
+*/
 
-const testAsync = async (msg) => {
+const testFull = async (msg) => {
 	return new Promise(async (resolve, reject) => {
 		let result;
 
-		const {filename, formatType} = msg;
-
+		const {extcsdFile, firmwareFile, formatType} = msg;
 		try {
 			//pre clear
 			await preScript();
 
-			result = await MPTOOL(filename);
+			//1. MPTOOL
+			result = await MPTOOL(firmwareFile, extcsdFile);
 			console.log(result);
 
-			//CDM test (clean)
+			//2. CDM test (clean)
 			result = await FORMAT(formatType);
 			console.log(result);
-			result = await CDM('clean');
+			result = await CDM('2_clean');
 			console.log(result);
 
-			//H2testw
+			//3. H2testw
+			result = await Trim();
+			console.log(result);			
 			result = await FORMAT(formatType);
 			console.log(result);
 			result = await H2testw();
 			console.log(result);	
 
-			//CDM test (dirty)
+			//4. CDM test (dirty)		
 			result = await FORMAT(formatType);
 			console.log(result);
-			result = await CDM('dirty');
+			result = await CDM('4_dirty');
 			console.log(result);
 
-			//ATTO
+			//5. ATTO
+			result = await Trim();
+			console.log(result);			
 			result = await FORMAT(formatType);
 			console.log(result);
 			result = await ATTO();
 			console.log(result);	
 			
-			//FLCC
-			result = await FORMAT(formatType);
-			console.log(result);
+			//6. FLCC
+			//result = await FORMAT(formatType);
+			//console.log(result);
 			result = await FLCC();
 			console.log(result);
 
-			//MFCJunior
-			result = await FORMAT(formatType);
-			console.log(result);
+			//7. MFCJunior
+			//result = await FORMAT(formatType);
+			//console.log(result);
 			result = await MFCJunior();
 			console.log(result);	
 			
-			//BurnIn test
-			result = await FORMAT(formatType);
-			console.log(result);
+			//8. BurnIn test
+			//result = await FORMAT(formatType);
+			//console.log(result);
 			result = await BurnIn();
 			console.log(result);
 
@@ -264,15 +303,18 @@ process.on('message', async (msg) => {
 	let result;
 	
 	try {
-		result = await testAsync(msg);
+		result = await testFull(msg);
 	} catch(err) {
 		result = err;
 		console.log(err);
 	}
-	console.log('@@@@@' + result + '@@@@@@')
+
 	await zip();	
 	await mail.init({
 		toMail: msg.email,
+		firmwareFile: msg.firmwareFile,
+		extcsdFile: msg.extcsdFile,
+		formatType: msg.formatType,
 		result
 	});
 	await mail.send();

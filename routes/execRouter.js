@@ -8,7 +8,7 @@ let child;
 
 const childScript = __dirname + '/forkedChild/autotest.js';
 
-
+/*
 let execScript = (obj) => {
 	return (done) => {
 		child = fork(childScript);
@@ -24,30 +24,34 @@ let execScript = (obj) => {
 		});
 	};
 };
+*/
 
-let execScript2 = (obj, cb) => {
-	//return (done) => {
-		child = fork(childScript);
-		child.send(obj);
 
-		child.on('message', (msg) => {
-			console.log('child send back:' + msg);
-		});
 
-		child.on('close', function (code) {
-			console.log('child process exited with code', code);
-			cb();
-			//done(null, 'child close'); 
-		});
-	//}
+//(1) 在 push 時，會將task及cb傳給async.queue
+//(2) 接著執行 console.log('Executing ' + task.name);
+//(3) 做完事情後，執行cb()
+//(4) cb()就是 console.log('Push the foo');
+
+let execScript = (obj, cb) => {
+	child = fork(childScript);
+	child.send(obj);
+
+	child.on('message', (msg) => {
+		console.log('child send back:' + msg);
+	});
+
+	child.on('close', function (code) {
+		console.log('child process exited with code', code);
+		cb();
+	});
 };
 
 let q = async.queue((task, cb) => {
 	console.log(task);
 	console.log('Executing task...');
 
-	execScript2(task, cb);
-	//cb();
+	execScript(task, cb);
 }, 1);
 
 //Fulled
@@ -64,15 +68,29 @@ q.push({name: 'foo'}, function (err) {
 });
 */
 router.get('/', function *(next) {
-	console.log ('execRouter start');
+	console.log ('/ start');
 	//yield execScript(this.query);
+
+/*
 	q.push(this.query, function (err) {
 		console.log('Finished processing qoo');
-		//return Promise.resolve('@@@@');
 	});
-
+*/
 	console.log ('execRouter end');
 	this.status = 200;
 });
+
+/*
+router.get('/:sorting', function *(next) {
+	console.log ('MPTool sorting start');
+
+	q.push(this.query, function (err) {
+		console.log('Finished processing qoo');
+	});
+
+	console.log ('MPTool sorting start end');
+	this.status = 200;
+});
+*/
 
 module.exports = router;

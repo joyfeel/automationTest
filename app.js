@@ -15,8 +15,6 @@ var execAutoTest = require('./routes/execRouter');
 var upload = require('./routes/upload');
 
 // global middlewares
-
-
 app.use(views('views', {
   root: __dirname + '/views',
   default: 'jade'
@@ -38,7 +36,6 @@ app.use(multer({
     }
 }));
 
-
 app.use(function *(next){
     var start = new Date;
     yield next;
@@ -54,11 +51,11 @@ koa.use('/users', users.routes(), users.allowedMethods());
 koa.use('/execRouter', execAutoTest.routes(), execAutoTest.allowedMethods());
 koa.use('/upload', upload.routes(), upload.allowedMethods());
 
-// mount root routes  
+//mount root routes  
 app.use(koa.routes());
 
 app.on('error', function(err, ctx){
-  log.error('server error', err, ctx);
+  console.log('server error:' + err + ctx);
 });
 
 module.exports = app;
