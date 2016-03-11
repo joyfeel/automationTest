@@ -5,6 +5,8 @@ import { exec } from 'child_process';
 import zip from './util/compression';
 import * as mail from './util/mail';
 
+import attachFW from './util/attachFW';
+
 const parseBatchLog = (str) => {
 	let result = false,
 		parsedStr;
@@ -215,36 +217,42 @@ const MPTOOL = async (firmwareFile, extcsdFile) => {
 			resolve('Mptool ok');
 		}
 	})
-
 }
 
-/*
-const MPTOOL = async (firmwareFile, extcsdFile) => {
-	let batLog;
-
-	console.log('======Mptool======');
-	//batLog = await myExec(__dirname + '/batScripts/Mptool.bat ' +  + ' ' extcsdFile);
-	batLog = await myExec(__dirname + `/batScripts/Mptool.bat ${firmwareFile} ${extcsdFile}`);
-	console.log(batLog);	
+const SuccessTest = async (formatType) => {
+	return new Promise(async (resolve, reject) => {
+		resolve('SuccessTest always success');
+	})
 }
-*/
+
+
+const FailTest = async (formatType) => {
+	return new Promise(async (resolve, reject) => {
+		reject('FailTest always fail');
+	})
+}
+
 
 const testFull = async (msg) => {
 	return new Promise(async (resolve, reject) => {
 		let result;
 
-		const {extcsdFile, firmwareFile, formatType} = msg;
+		const {extcsdFile, timestampFirmware, formatType} = msg;
 		try {
+
+			//await SuccessTest();
+			//await FailTest();
+
 			//pre clear
 			await preScript();
 
 			//1. MPTOOL
-			result = await MPTOOL(firmwareFile, extcsdFile);
+			result = await MPTOOL(timestampFirmware, extcsdFile);
 			console.log(result);
 
 			//2. CDM test (clean)
 			result = await FORMAT(formatType);
-			console.log(result);
+			console.log(result);	
 			result = await CDM('2_clean');
 			console.log(result);
 
@@ -288,36 +296,73 @@ const testFull = async (msg) => {
 			result = await BurnIn();
 			console.log(result);
 
-			resolve('success!');
+			resolve('Success!');
 		} catch (err) {
 			//Power Cycle
+			
 			console.log('ERROR happend: ' + err);
 			result = await PowerCycle();
 			console.log(result);			
-			reject('fail!');
+			
+			//console.log('.............??????')
+			reject('Fail');
+		}
+	})
+}
+
+const mpSorting = async () => {
+	return new Promise(async (resolve, reject) => {
+		let batLog,
+		result = false;
+
+		console.log('======Mptool Sorting======');
+		batLog = await myExec(__dirname + `/batScripts/MptoolSorting.bat`);
+		result = parseBatchLog (batLog);
+		if (result === false) {
+			reject('MptoolSorting error');
+		} else {
+			resolve('MptoolSorting ok');
 		}
 	})
 }
 
 process.on('message', async (msg) => {
-	let result;
-	
+	let result,
+		testFullResult;
+
 	try {
-		result = await testFull(msg);
+		if (msg.sortingChecked === 'true') {
+			result = await mpSorting();
+			//result = await FailTest();
+			//result = await SuccessTest();
+			console.log('sorting result:' + result);
+		}
+		
+		testFullResult = await testFull(msg);
 	} catch(err) {
-		result = err;
+		testFullResult = 'Fail';
 		console.log(err);
 	}
 
-	await zip();	
+	console.log('testFullResult:' + testFullResult);
+
+	await attachFW({
+		originalFirmware: msg.originalFirmware,
+		timestampFirmware: msg.timestampFirmware,
+		extcsdFile: msg.extcsdFile
+	});
+	await zip();
 	await mail.init({
 		toMail: msg.email,
-		firmwareFile: msg.firmwareFile,
+		originalFirmware: msg.originalFirmware,
+		//timestampFirmware: msg.timestampFirmware,
 		extcsdFile: msg.extcsdFile,
 		formatType: msg.formatType,
-		result
+		sortingChecked: msg.sortingChecked,
+		testFullResult
 	});
-	await mail.send();
+
+	await mail.send();	
 
 	process.exit(0);
 })

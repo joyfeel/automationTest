@@ -69,13 +69,11 @@ q.push({name: 'foo'}, function (err) {
 */
 router.get('/', function *(next) {
 	console.log ('/ start');
-	//yield execScript(this.query);
 
-/*
 	q.push(this.query, function (err) {
-		console.log('Finished processing qoo');
+		console.log('Finish process!');
 	});
-*/
+
 	console.log ('execRouter end');
 	this.status = 200;
 });
