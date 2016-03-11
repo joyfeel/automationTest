@@ -11,7 +11,7 @@ class App extends React.Component {
 	constructor() {
 		super();
 		this.state = {
-			file: null,
+			fwFile: null,
 			extcsdFile: null,
 			formatType: 'fat32',
 			email: '',
@@ -30,41 +30,49 @@ class App extends React.Component {
 		this.toggleChangeSorting = this.toggleChangeSorting.bind(this);
 	}
 	submit() {
-		let originalFirmware, 
+		let originalFirmware,
 			timestampFirmware;
-		const {extcsdFile, file, formatType, email, sortingChecked} = this.state;
+		const {extcsdFile, fwFile, formatType, email, sortingChecked, fwCE, extcsdCE} = this.state;
+		//console.dir(this.state)
 
 		//Empty
-		if (!extcsdFile || !file) {
-			alert('檔名不正確');
+		if (!extcsdFile || !fwFile) {
+			alert('檔名不齊全');
 			return;
 		}
 
 		if (!email) {
-			alert('email 資料不齊全');
+			alert('email 不齊全');
 			return;
-		}		
+		}
 
 		//extcsd===512
 		if (extcsdFile.size !== 512) {
 			alert('ext_csd file !== 512 bytes');
 			return;
-		} else if (file.size < 200000 || file.size > 300000) {
+		} else if (fwFile.size < 200000 || fwFile.size > 300000) {
 			alert('firmware bin < 200000  or > 300000 bytes');
 			return;
 		}
 
-		console.log(extcsdFile)
-		console.log(file)
+		if (fwCE !== extcsdCE) {
+				if (fwCE !== 1 || fwCE !== 2 || fwCE !== 4) {
+					alert('CE 數不 match!');
+					return;
+				}
+		}
 
-		let retVal = confirm("Do you want to test?");
+		//console.log(extcsdFile)
+		//console.log(file)
+
+		let retVal = confirm("Ready to go?");
 		if (retVal === false) {
 			return;
 		} else {
-			originalFirmware = file.name;
-			timestampFirmware = file.name
+			originalFirmware = fwFile.name;
+			timestampFirmware = fwFile.name
 									.replace('.bin', '-' + Date.now())
-									.concat('.bin');			
+									.concat('.bin');
 		}
 		async.series([
 /*
@@ -80,7 +88,7 @@ class App extends React.Component {
 				//console.log('Upload file');
 				request
 					.post('/upload')
-					.attach('bin', file, timestampFirmware)
+					.attach('bin', fwFile, timestampFirmware)
 					.attach('jnr', extcsdFile, extcsdFile.name)
 					.end(callback);
 			},
@@ -101,9 +109,9 @@ class App extends React.Component {
 		],
 		(err, res) => {		// This is the 'callback'!
     		if (err) {
-    			console.log(err);	
+    			console.log(err);
     		} else {
-    			console.log(res)	
+    			console.log(res)
     		}
 		});
 	}
@@ -116,48 +124,63 @@ class App extends React.Component {
 		  (4) bootstrap: this.refs.file.getInputDOMNode().files[0]
 		*/
 
-		let file = this.refs.file.getInputDOMNode().files[0];
-		console.log(`filename: ${file.name}`);
-		let regex = /([1,2,4])(CE)/g,
+		let file = this.refs.fwFile.getInputDOMNode().files[0];
+		//console.log(`filename: ${file.name}`);
+		let regex = /[-_a-zA_Z]([1,2,4])(CE)/g,
 			count = (file.name.match(regex) || []).length;
-		
-		if (count !== 1) {
-			alert(`請更改 fw 檔名，須包含CE數。ex: fw_2CE_0301`);
-			this.setState({
-				file: null,
-				fwCE: null
-			});			
-			return;
-		}
 
 		if (file.size < 100000 || file.size > 300000) {
 			alert('fw bin < 100000 or > 300000 bytes');
 			this.setState({
-				file: null,
+				fwFile: null,
 				fwCE: null
-			});				
+			});
+			return;
+		}
+
+		if (count !== 1) {
+			alert(`請更改 fw 檔名，需包含 CE 數。\nex: fw_2CE_0301`);
+			this.setState({
+				fwFile: null,
+				fwCE: null
+			});
 			return;
 		}
 
 		this.setState({
-			file: this.refs.file.getInputDOMNode().files[0],
+			fwFile: this.refs.fwFile.getInputDOMNode().files[0],
 			fwCE: RegExp.$1
-		});		
-
-
-		console.log(`count: ${count}`)
-		console.log(typeof count)
-/*
-			fwCE: null,
-			extcsdCE: null
-*/
+		});
 
 	}
 	//EXT_CSD
 	handleChangeExtCsdFile(e) {
+		let file = this.refs.extcsdFile.getInputDOMNode().files[0];
+		//console.log(`filename: ${file.name}`);
+		let regex = /[-_a-zA_Z]([1,2,4])(CE)/g,
+			count = (file.name.match(regex) || []).length;
+
+		if (file.size != 512) {
+			alert('ext_csd file !== 512 bytes');
+			this.setState({
+				extcsdFile: null,
+				extcsdCE: null
+			});
+			return;
+		}
+
+		if (count !== 1) {
+			alert(`請更改 extCSD 檔名，需包含 CE 數。\nex: ext_csd_2CE_0301`);
+			this.setState({
+				extcsdFile: null,
+				extcsdCE: null
+			});
+			return;
+		}
 
 		this.setState({
-			extcsdFile: this.refs.extcsdfile.getInputDOMNode().files[0]
+			extcsdFile: this.refs.extcsdFile.getInputDOMNode().files[0],
+			extcsdCE: RegExp.$1
 		});
 	}
 	handleChangeSelect() {
@@ -192,66 +215,66 @@ class App extends React.Component {
 	resend() {
 		this.setState({
 			resend: !this.state.resend
-		});		
+		});
 	}
 	render() {
 		return (
 			<Grid>
 				<Row className="show-grid">
 					<Col xs={12} md={6}>
-						<Input 
-							type='email' 
-							label='Email Address (VIA only)' 
-							placeholder='Enter email' 
-							ref='email' 
-							onChange={this.handleChangeEmail} 
+						<Input
+							type='email'
+							label='Email Address (VIA only)'
+							placeholder='Enter email'
+							ref='email'
+							onChange={this.handleChangeEmail}
 						/>
 					</Col>
 				</Row>
 				<Row className="show-grid">
 					<Col xs={12} md={8}>
-						<Input 
-							type='file' 
-							label='Choose Firmware File' 
-							ref='file' 
-							onChange={this.handleChangeFile} 
+						<Input
+							type='file'
+							label='Choose Firmware File'
+							ref='fwFile'
+							onChange={this.handleChangeFile}
 						/>
-					</Col>												
+					</Col>
 					<Col xs={12} md={4}>
-						<Input 
-							type='file' 
-							label='Choose EXT_CSD File' 
-							ref='extcsdfile' 
-							onChange={this.handleChangeExtCsdFile} 
+						<Input
+							type='file'
+							label='Choose EXT_CSD File'
+							ref='extcsdFile'
+							onChange={this.handleChangeExtCsdFile}
 						/>
-					</Col>		
+					</Col>
 					<Col xs={8} md={4}>
-					    <Input type='select' label="Select Format Type(Filesystem)" 
-					    	defaultValue='fat32' ref='formatType' 
+					    <Input type='select' label="Select Format Type(Filesystem)"
+					    	defaultValue='fat32' ref='formatType'
 					    	onChange={this.handleChangeSelect} placeholder="select">
 					    	{/*<option value="ntfs">NTFS (4k)</option>*/}
 					      	<option value="fat32" >FAT32 (16k)</option>
 					      	<option value="exfat">exFAT (32k)</option>
 					    </Input>
-					</Col>					
+					</Col>
 				</Row>
 				<Row className="show-grid">
 					<Col xs={6} md={2}>
 					    {!this.state.resend ?
-					    	<ButtonInput 
+					    	<ButtonInput
 					    		value="Test firmware bin"
-					    		bsStyle={this.state.style} 
-								disabled={this.state.disabled} 
+					    		bsStyle={this.state.style}
+								disabled={this.state.disabled}
 								onClick={this.submit}/> :
 					    	null}
 					</Col>
 					<Col xs={6} md={2}>
 					  <div class="checkbox">
 					    <label>
-					      <Input 
-					      	type="checkbox" 
+					      <Input
+					      	type="checkbox"
 					      	checked={this.state.sortingChecked}
-					      	onChange={this.toggleChangeSorting}> 
+					      	onChange={this.toggleChangeSorting}>
 					      	Do Flash Sorting
 					      </Input>
 					    </label>
