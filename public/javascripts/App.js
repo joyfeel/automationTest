@@ -31,7 +31,7 @@ class App extends React.Component {
 	}
 	submit() {
 		let originalFirmware,
-			timestampFirmware;
+				timestampFirmware;
 		const {extcsdFile, fwFile, formatType, email, sortingChecked, fwCE, extcsdCE} = this.state;
 		//console.dir(this.state)
 
@@ -45,13 +45,12 @@ class App extends React.Component {
 			alert('email 不齊全');
 			return;
 		}
-
 		//extcsd===512
 		if (extcsdFile.size !== 512) {
 			alert('ext_csd file !== 512 bytes');
 			return;
-		} else if (fwFile.size < 200000 || fwFile.size > 300000) {
-			alert('firmware bin < 200000  or > 300000 bytes');
+		} else if (fwFile.size < 100000 || fwFile.size > 350000) {
+			alert('firmware bin < 100000  or > 350000 bytes');
 			return;
 		}
 
@@ -62,10 +61,7 @@ class App extends React.Component {
 				}
 		}
 
-		//console.log(extcsdFile)
-		//console.log(file)
-
-		let retVal = confirm("Ready to go?");
+		let retVal = confirm("確定要進行測試嗎?");
 		if (retVal === false) {
 			return;
 		} else {
@@ -115,6 +111,12 @@ class App extends React.Component {
     		}
 		});
 	}
+	clearFWState(fwFile = null, fwCE = null) {
+		this.setState({
+			fwFile,
+			fwCE
+		});
+	}
 	//FW
 	handleChangeFile(e) {
 		/*
@@ -125,63 +127,81 @@ class App extends React.Component {
 		*/
 
 		let file = this.refs.fwFile.getInputDOMNode().files[0];
-		//console.log(`filename: ${file.name}`);
-		let regex = /[-_a-zA_Z]([1,2,4])(CE)/g,
-			count = (file.name.match(regex) || []).length;
 
-		if (file.size < 100000 || file.size > 300000) {
-			alert('fw bin < 100000 or > 300000 bytes');
-			this.setState({
-				fwFile: null,
-				fwCE: null
-			});
+		if (typeof file === "undefined") {
+			this.clearFWState(null, null);
 			return;
 		}
 
-		if (count !== 1) {
+		let filename = file.name,
+				result;
+
+		let regexOneCe = /ce/ig,	//only one ce
+				regexCENumber = /([1,2,4])(CE)/ig; 	//get CE number
+
+		if (file.length === 0) {
+			alert('file undefined')
+			this.clearFWState(null, null);
+			return;
+		}
+		if (file.size < 100000 || file.size > 350000) {
+			alert('fw bin < 100000 or > 350000 bytes');
+			tthis.clearFWState(null, null);
+			return;
+		}
+
+		result = filename.split(regexOneCe)
+		if (result.length !== 2) {
 			alert(`請更改 fw 檔名，需包含 CE 數。\nex: fw_2CE_0301`);
-			this.setState({
-				fwFile: null,
-				fwCE: null
-			});
+			tthis.clearFWState(null, null);
 			return;
+		} else {
+			let count = (filename.match(regexCENumber) || []).length;
+			this.clearFWState(file, RegExp.$1);
 		}
-
+	}
+	clearExtCsdState(extcsdFile = null, extcsdCE = null) {
 		this.setState({
-			fwFile: this.refs.fwFile.getInputDOMNode().files[0],
-			fwCE: RegExp.$1
+			extcsdFile,
+			extcsdCE
 		});
-
 	}
 	//EXT_CSD
 	handleChangeExtCsdFile(e) {
 		let file = this.refs.extcsdFile.getInputDOMNode().files[0];
-		//console.log(`filename: ${file.name}`);
-		let regex = /[-_a-zA_Z]([1,2,4])(CE)/g,
-			count = (file.name.match(regex) || []).length;
+
+		if (typeof file === "undefined") {
+			this.clearExtCsdState(null, null);
+			return;
+		}
+
+		let filename = file.name,
+				result;
+
+		let regexOneCe = /ce/ig,	//only one ce
+				regexCENumber = /([1,2,4])(CE)/ig; 	//get CE number
+
+		if (file.length === 0) {
+			alert('file undefined')
+			this.clearExtCsdState(null, null);
+			return;
+		}
 
 		if (file.size != 512) {
 			alert('ext_csd file !== 512 bytes');
-			this.setState({
-				extcsdFile: null,
-				extcsdCE: null
-			});
+			this.clearExtCsdState(null, null);
 			return;
 		}
 
-		if (count !== 1) {
+		result = filename.split(regexOneCe)
+		if (result.length !== 2) {
 			alert(`請更改 extCSD 檔名，需包含 CE 數。\nex: ext_csd_2CE_0301`);
-			this.setState({
-				extcsdFile: null,
-				extcsdCE: null
-			});
+			this.clearExtCsdState(null, null);
 			return;
+		} else {
+			let count = (filename.match(regexCENumber) || []).length
+			this.clearExtCsdState(file, RegExp.$1);
 		}
-
-		this.setState({
-			extcsdFile: this.refs.extcsdFile.getInputDOMNode().files[0],
-			extcsdCE: RegExp.$1
-		});
 	}
 	handleChangeSelect() {
 		//console.log(this.refs.format);
